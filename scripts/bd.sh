@@ -22,7 +22,7 @@ log_error() {
 
 
 # 默认配置
-COUNT=3
+COUNT=6
 TARGET_DIR=""
 MOUNT_POINT="/tmp/bd_mount"
 GRID_LAYOUT=""
@@ -617,7 +617,7 @@ process_video_file() {
             screenshot_files+=("$outfile")
             compress_png "$outfile"
 			local compress_file_size=$(stat -c "%s" "$outfile" | awk '{print $1/1024 " kb"}')
-			echo "截图 $((i+1)) 完成: $target_ts 秒 -> 文件: $outfile (大小: $file_size , 压缩后: $compress_file_size)"
+			echo "截图 $((i+1)) 完成: $target_ts 秒 -> 文件: $outfile (大小: $file_size , 无压缩: $compress_file_size)"
 			
         else
             echo "错误: 截图 $((i+1)) 失败！文件不存在/为空: $outfile" >&2
