@@ -2,7 +2,7 @@
 
 # bd.sh 脚本
 
-蓝光/普通视频截图和信息提取工具，支持自动截图、字幕渲染、拼图、图床上传等功能。
+蓝光/普通视频截图和信息提取工具，支持自动截图、字幕渲染、拼图、图床上传等功能（本脚本移除了有损压缩，若4k视频截图超出10兆，请从/root/screenshot中导出至本地处理之后再手动上传图床））。
 
 
 ## 功能特性
@@ -35,7 +35,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 - ffmpeg
 - curl
 - jq
-- pngquant
 - mediainfo
 - libicu-dev / libicu
 - BDInfo（根据系统架构自动选择 x64 或 arm64 版本）
