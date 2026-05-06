@@ -4,7 +4,7 @@ set -euo pipefail  # 开启严格模式，出错时立即退出
 # 定义关键路径
 BD_SH_PATH="/root/bd.sh"
 LINK_TARGET="/usr/local/bin/bd"
-DOWNLOAD_URL="https://raw.githubusercontent.com/Kuanghom/BDInfo/main/scripts/bd.sh"
+DOWNLOAD_URL="https://raw.githubusercontent.com/colin9959/BDInfo/main/scripts/bd.sh"
 
 
 # 检查是否为root用户（创建/usr/local/bin链接需要root）
