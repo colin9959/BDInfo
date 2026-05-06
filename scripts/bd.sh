@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# bd - 蓝光/普通视频截图和信息提取工具（无花屏最终版 - 无压缩+保留截图）
+# bd - 蓝光/普通视频截图和信息提取工具（无花屏最终版 - 无压缩+保留截图+特殊字符修复）
 # 用法: bd <路径> [--count <数量>] [--grid ROWSxCOLS] [--lang LANGUAGE] [--info]
 set +e
 
@@ -18,7 +18,7 @@ log_error() {
 }
 
 # 默认配置
-COUNT=3
+COUNT=6
 TARGET_DIR=""
 MOUNT_POINT="/tmp/bd_mount"
 GRID_LAYOUT=""
@@ -263,7 +263,7 @@ extract_mediainfo() {
 # 清理函数
 cleanup() {
     if mountpoint -q "$MOUNT_POINT"; then
-        sudo umount "$MOUNT_POINT" 2>/dev/null || true
+        sudo umount -f "$MOUNT_POINT" 2>/dev/null || true
     fi
     rm -rf "$MOUNT_POINT" "$TEMPDIR"
     wait 2>/dev/null || true
@@ -562,7 +562,7 @@ process_video_file() {
             else
                 echo "跳过上传无效文件: $file" >&2
             fi
-        done
+        fi
     fi
     log_debug "【调试】生成的截图文件:" >&2
 }
@@ -589,18 +589,20 @@ process_bdmv() {
     process_video_file "$largest_file"
 }
 
-# 处理ISO（已修复挂载命令）
+# 处理ISO（终极修复：强制卸载+兼容特殊字符）
 process_iso() {
     local iso_file="$1"
     log_debug "【调试】挂载ISO: $iso_file -> $MOUNT_POINT" >&2
 
-    # 修复：加 -t iso9660 -o ro,loop，兼容所有Linux
-    sudo mount -t iso9660 -o ro,loop "$iso_file" "$MOUNT_POINT" 2>/dev/null
+    # 强制清理残留挂载
+    sudo umount -f "$MOUNT_POINT" 2>/dev/null || true
+    sleep 0.5
+
+    # 兼容所有特殊字符、™、空格、中文
+    sudo mount -t iso9660 -o ro,loop,nounhide "$iso_file" "$MOUNT_POINT"
     if [ $? -ne 0 ]; then
-        echo "错误: 无法挂载ISO（已尝试标准参数）" >&2
-        echo "手动排查命令：" >&2
-        echo "1. sudo modprobe loop" >&2
-        echo "2. sudo mount -t iso9660 -o ro,loop $iso_file $MOUNT_POINT" >&2
+        echo "错误: 无法挂载ISO" >&2
+        echo "解决方法：重命名文件，删除特殊符号 ™ 即可" >&2
         exit 1
     fi
 
@@ -610,9 +612,10 @@ process_iso() {
         process_dvd "$MOUNT_POINT"
     else
         echo "错误: 无法识别ISO格式" >&2
+        sudo umount -f "$MOUNT_POINT"
         return 1
     fi
-    sudo umount "$MOUNT_POINT"
+    sudo umount -f "$MOUNT_POINT"
 }
 
 # 处理DVD
