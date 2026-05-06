@@ -29,8 +29,8 @@ MAX_PARALLEL=1
 SKIP_DEP_CHECK=false
 
 # BDInfo 配置
-BDINFO_URL_X64="https://github.com/dotnetcorecorner/BDInfo/releases/download/linux-2.0.6/bdinfo_linux_v2.0.6.zip"
-BDINFO_URL_ARM64="https://github.com/colin9959/BDInfo/releases/download/1.0.0/bdinfo_linux_arm64_v2.0.6.zip"
+BDINFO_URL_X64="https://github.com/dotnetcorecorner/BDInfo/releases/download/v2.0.6/bdinfo_linux_v2.0.6.zip"
+BDINFO_URL_ARM64="https://github.com/colin9959/BDInfo/releases/download/v1.0.0/bdinfo_linux_arm64_v2.0.6.zip"
 INSTALL_DIR="/usr/local/bin"
 TEMPDIR=$(mktemp -d)
 
@@ -72,7 +72,7 @@ while [[ $# -gt 0 ]]; do
                 OUTPUT_DIR="${USER_SCREENSHOT_DIR}/${SUBDIR_NAME}"
                 mkdir -p "$OUTPUT_DIR"
                 chmod 777 "$OUTPUT_DIR"
-                log_debug "【调试】输出目录: $OUTPUT_DIR (权限: $(stat -c %a "$OUTPUT_DIR"))" >&2
+                log_debug "【调试】输出目录: $OUTPUT_DIR (权限: $(stat -c %a "$OUTPUT_DIR"))"
             else
                 echo "错误: 多余的参数 $1" >&2
                 exit 1
@@ -224,7 +224,7 @@ parse_bdinfo() {
         }
     }
     END {
-        if(best_section!=""){sub(/[[:space:]]+$/,"",best_section); print "↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓ BDInfo 信息 ↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓"; print best_section; print "↑#↑#↑#↑#↑#↑#↑#↑#↑#↑#↑ 分割线 ↑#↑#↑#↑#↑#↑#↑#↑#↑#↑#↑"}
+        if(best_section!=""){sub(/[[:space:]]+$/, "", best_section); print "↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓ BDInfo 信息 ↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓"; print best_section; print "↑#↑#↑#↑#↑#↑#↑#↑#↑#↑#↑ 分割线 ↑#↑#↑#↑#↑#↑#↑#↑#↑#↑#↑"}
         else{print "错误: 无有效PLAYLIST" > "/dev/stderr"; exit 1}
     }'
 }
@@ -278,7 +278,7 @@ upload_to_pixhost() {
     local retry_count=0
     local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
     while ((retry_count < max_retry)); do
-        log_debug "【调试】上传图片: $file" >&2
+        log_debug "【调试】上传图片: $file"
         local response=$(curl -s -F "name=$(basename "$file")" -F "ajax=yes" -F "content_type=0" -F "file=@$file" "https://pixhost.to/new-upload/")
         if [ -z "$response" ]; then
             echo "上传失败(空响应)" >&2
@@ -290,7 +290,7 @@ upload_to_pixhost() {
                 local url=$(echo "$response" | jq -r '.show_url' | sed 's|\\||g;s|pixhost\.to/show|img2.pixhost.to/images|')
                 echo "[img]$url[/img]"
                 echo "$url" >> .image_url.txt
-                log_debug "【调试】上传成功: $url" >&2
+                log_debug "【调试】上传成功: $url"
                 return 0
             fi
         fi
@@ -304,9 +304,9 @@ upload_to_pixhost() {
 # 获取视频时长
 get_duration() {
     local input="$1"
-    log_debug "【调试】获取时长: $input" >&2
+    log_debug "【调试】获取时长: $input"
     local duration=$(ffprobe -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$input" 2>/dev/null | awk '{print int($1)}')
-    log_debug "【调试】视频时长: $duration 秒" >&2
+    log_debug "【调试】视频时长: $duration 秒"
     echo "$duration"
 }
 
@@ -314,11 +314,11 @@ get_duration() {
 get_subtitle_index() {
     local input="$1"
     local language="$2"
-    log_debug "【调试】查找字幕流: $language" >&2
+    log_debug "【调试】查找字幕流: $language"
     local subtitle_info=$(ffprobe -v error -select_streams s -show_entries stream=index,codec_name:stream_tags=language -of csv=p=0 "$input" 2>/dev/null)
-    log_debug "【调试】字幕流原始信息: $subtitle_info" >&2
+    log_debug "【调试】字幕流原始信息: $subtitle_info"
     if [[ -z "$subtitle_info" ]]; then
-        log_debug "【调试】未找到字幕流" >&2
+        log_debug "【调试】未找到字幕流"
         echo ""
         return
     fi
@@ -334,23 +334,23 @@ get_subtitle_index() {
         local index=$(echo "$line" | cut -d',' -f1)
         local codec=$(echo "$line" | cut -d',' -f2 | tr '[:upper:]' '[:lower:]')
         local lang=$(echo "$line" | cut -d',' -f3 | tr '[:upper:]' '[:lower:]')
-        log_debug "【调试】检查字幕流: 流索引=$index, 编解码=$codec, 字幕序号=$sub_idx, 语言代码=$lang" >&2
+        log_debug "【调试】检查字幕流: 流索引=$index, 编解码=$codec, 字幕序号=$sub_idx, 语言代码=$lang"
         local sub_type="graphic"
         if [[ " $text_codecs " == *" $codec "* ]]; then
             sub_type="text"
         fi
-        log_debug "【调试】字幕类型: $sub_type (编解码: $codec)" >&2
+        log_debug "【调试】字幕类型: $sub_type (编解码: $codec)"
         local normalized_lang="${lang_map[$lang]:-$lang}"
         local normalized_query="${lang_map[${language,,}]:-${language,,}}"
-        log_debug "【调试】标准化后: 流语言=$normalized_lang, 查询语言=$normalized_query" >&2
+        log_debug "【调试】标准化后: 流语言=$normalized_lang, 查询语言=$normalized_query"
         if [[ "$normalized_lang" == *"$normalized_query"* ]] || [[ "$lang" == *"${language,,}"* ]]; then
-            log_debug "【调试】找到匹配字幕流: 流索引=$index, 字幕序号=$sub_idx, 类型=$sub_type (语言: $lang -> $normalized_lang)" >&2
+            log_debug "【调试】找到匹配字幕流: 流索引=$index, 字幕序号=$sub_idx, 类型=$sub_type (语言: $lang -> $normalized_lang)"
             echo "$sub_idx,$sub_type"
             return
         fi
         ((sub_idx++))
     done <<< "$subtitle_info"
-    log_error "【调试】未找到指定语言字幕流 (查找: $language)" >&2
+    log_error "【调试】未找到指定语言字幕流 (查找: $language)"
     echo ""
 }
 
@@ -363,7 +363,7 @@ create_grid_with_ffmpeg() {
         if [[ -f "$file" && -s "$file" ]]; then
             valid_files+=("$file")
         else
-            log_debug "【调试】无效截图文件: $file" >&2
+            log_debug "【调试】无效截图文件: $file"
         fi
     done
     if [[ ${#valid_files[@]} -eq 0 ]]; then
@@ -376,7 +376,7 @@ create_grid_with_ffmpeg() {
         rows=$(echo "$GRID_LAYOUT" | cut -d'x' -f1)
         cols=$(echo "$GRID_LAYOUT" | cut -d'x' -f2)
     fi
-    log_debug "【调试】创建拼图: ${cols}x${rows}" >&2
+    log_debug "【调试】创建拼图: ${cols}x${rows}"
     if [[ ${#valid_files[@]} -eq 1 ]]; then
         cp "${valid_files[0]}" "$grid_file"
     else
@@ -427,7 +427,7 @@ create_grid_with_ffmpeg() {
                     log_error "montage拼图失败 (退出码: $montage_exit_code)"
                     if [[ -f "$montage_error_file" && -s "$montage_error_file" ]]; then
                         log_error "montage错误输出:"
-                        cat "$montage_error_file" | head-20 >> "$LOG_FILE"
+                        cat "$montage_error_file" | head -20 >> "$LOG_FILE"
                     fi
                     echo "错误: montage拼图也失败" >&2
                     return 1
@@ -441,7 +441,7 @@ create_grid_with_ffmpeg() {
         fi
     fi
     if [[ -f "$grid_file" && -s "$grid_file" ]]; then
-        log_debug "【调试】拼图生成成功: $grid_file" >&2
+        log_debug "【调试】拼图生成成功: $grid_file"
         if ! upload_to_pixhost "$grid_file"; then
             echo "拼图上传失败，本地保留: $grid_file" >&2
         fi
@@ -467,7 +467,7 @@ process_video_file() {
     if [[ -n "$subtitle_info" ]]; then
         subtitle_index=$(echo "$subtitle_info" | cut -d',' -f1)
         subtitle_type=$(echo "$subtitle_info" | cut -d',' -f2)
-        log_debug "【调试】字幕信息: 序号=$subtitle_index, 类型=$subtitle_type" >&2
+        log_debug "【调试】字幕信息: 序号=$subtitle_index, 类型=$subtitle_type"
     fi
     local margin=120
     local available_duration=$((duration - 2 * margin))
@@ -497,7 +497,7 @@ process_video_file() {
             use_subtitle=true
         else
             subtitle_display="序号$subtitle_index (图形字幕,不支持烧录)"
-            log_debug "【调试】图形字幕不支持FFmpeg烧录，将跳过字幕" >&2
+            log_debug "【调试】图形字幕不支持FFmpeg烧录，将跳过字幕"
         fi
     fi
     echo "视频时长: $duration 秒, 字幕流: $subtitle_display, 截图数量: $total_frames"
@@ -533,12 +533,12 @@ process_video_file() {
             fi
         fi
         ffmpeg_cmd+=("$outfile")
-        log_debug "【调试】执行截图命令: ${ffmpeg_cmd[*]}" >&2
+        log_debug "【调试】执行截图命令: ${ffmpeg_cmd[*]}"
         local ffmpeg_output
         ffmpeg_output=$("${ffmpeg_cmd[@]}" 2>&1)
         local ffmpeg_exit=$?
         if [[ -n "$ffmpeg_output" ]]; then
-            log_debug "【调试】ffmpeg 输出: $ffmpeg_output" >&2
+            log_debug "【调试】ffmpeg 输出: $ffmpeg_output"
         fi
         if [[ -f "$outfile" && -s "$outfile" ]]; then
             local file_size=$(stat -c "%s" "$outfile" | awk '{print $1/1024 " kb"}')
@@ -562,9 +562,9 @@ process_video_file() {
             else
                 echo "跳过上传无效文件: $file" >&2
             fi
-        fi
+        done
     fi
-    log_debug "【调试】生成的截图文件:" >&2
+    log_debug "【调试】生成的截图文件:"
 }
 
 # 处理BDMV
@@ -592,7 +592,7 @@ process_bdmv() {
 # 处理ISO（终极修复：强制卸载+兼容特殊字符）
 process_iso() {
     local iso_file="$1"
-    log_debug "【调试】挂载ISO: $iso_file -> $MOUNT_POINT" >&2
+    log_debug "【调试】挂载ISO: $iso_file -> $MOUNT_POINT"
 
     # 强制清理残留挂载
     sudo umount -f "$MOUNT_POINT" 2>/dev/null || true
@@ -653,23 +653,29 @@ main() {
         echo "用法: $0 <路径> [--count <数量>] [--grid ROWSxCOLS] [--lang LANGUAGE] [--info]" >&2
         exit 1
     fi
-    log_debug "【调试】处理路径: $TARGET_DIR" >&2
-    log_debug "【调试】路径类型: $(if [[ -f "$TARGET_DIR" ]]; then echo "文件"; elif [[ -d "$TARGET_DIR" ]]; then echo "目录"; else echo "不存在"; fi)" >&2
+    log_debug "【调试】处理路径: $TARGET_DIR"
+    log_debug "【调试】路径类型: $(if [[ -f "$TARGET_DIR" ]]; then echo "文件"; elif [[ -d "$TARGET_DIR" ]]; then echo "目录"; else echo "不存在"; fi)"
     local input_type=$(get_input_type "$TARGET_DIR")
     case "$input_type" in
-        bdmv) process_bdmv "$TARGET_DIR";;
+        bdmv) process_bdmv "$TARGET_DIR" ;;
         iso)
             if [[ -f "$TARGET_DIR" ]]; then
                 process_iso "$TARGET_DIR"
             else
                 local iso_file=$(find "$TARGET_DIR" -maxdepth 1 -type f \( -iname "*.iso" \) | head -1)
-                [[ -n "$iso_file" ]] && process_iso "$iso_file" || (echo "错误: 无ISO文件" >&2 && exit 1)
-            fi;;
-        dvd) process_dvd "$TARGET_DIR";;
-        video) process_regular_video "$TARGET_DIR";;
-        video_file:*) process_regular_video "${input_type#video_file:}";;
-        bdfile) process_video_file "$TARGET_DIR";;
-        *) echo "错误: 不支持的类型: $input_type" >&2 && exit 1;;
+                if [[ -n "$iso_file" ]]; then
+                    process_iso "$iso_file"
+                else
+                    echo "错误: 无ISO文件" >&2
+                    exit 1
+                fi
+            fi
+            ;;
+        dvd) process_dvd "$TARGET_DIR" ;;
+        video) process_regular_video "$TARGET_DIR" ;;
+        video_file:*) process_regular_video "${input_type#video_file:}" ;;
+        bdfile) process_video_file "$TARGET_DIR" ;;
+        *) echo "错误: 不支持的类型: $input_type" >&2 && exit 1 ;;
     esac
     echo -e "\n↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓ 完成 ↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓"
     if [[ -f ".image_url.txt" && -s ".image_url.txt" ]]; then
