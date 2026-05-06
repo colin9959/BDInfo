@@ -34,7 +34,7 @@ SKIP_DEP_CHECK=false
 
 # BDInfo 配置
 BDINFO_URL_X64="https://github.com/dotnetcorecorner/BDInfo/releases/download/linux-2.0.6/bdinfo_linux_v2.0.6.zip"
-BDINFO_URL_ARM64="https://github.com/Kuanghom/BDInfo/releases/download/arm64-2.0.6/bdinfo_linux_arm64_v2.0.6.zip"
+BDINFO_URL_ARM64="https://github.com/colin9959/BDInfo/releases/download/1.0.0/bdinfo_linux_arm64_v2.0.6.zip"
 INSTALL_DIR="/usr/local/bin"
 TEMPDIR=$(mktemp -d)
 
