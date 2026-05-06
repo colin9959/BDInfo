@@ -107,7 +107,7 @@ install_dependencies() {
         return 0
     fi
     local missing=()
-    for cmd in ffmpeg curl jq pngquant mediainfo montage; do
+    for cmd in ffmpeg curl jq  mediainfo montage; do
         if ! command -v $cmd &>/dev/null; then
             missing+=("$cmd")
         fi
@@ -291,10 +291,6 @@ upload_to_pixhost() {
     local retry_count=0
     local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
     if ((size > max_size_mb * 1024 * 1024)); then
-        if ! compress_png "$file"; then
-            echo "压缩失败，跳过上传" >&2
-            return 1
-        fi
     fi
     while ((retry_count < max_retry)); do
         local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
@@ -582,8 +578,7 @@ process_video_file() {
             -an                      # 禁用音频，节省资源
             -vframes 1               # 仅取1帧
             -c:v png                 # PNG编码器
-            -compression_level 100   # 最大压缩
-			-pred best               # 自动选最优滤镜
+            -compression_level 12    # 最大压缩
             -y                       # 覆盖输出
         )
 
@@ -616,9 +611,7 @@ process_video_file() {
         if [[ -f "$outfile" && -s "$outfile" ]]; then
             local file_size=$(stat -c "%s" "$outfile" | awk '{print $1/1024 " kb"}')
             screenshot_files+=("$outfile")
-            compress_png "$outfile"
-			local compress_file_size=$(stat -c "%s" "$outfile" | awk '{print $1/1024 " kb"}')
-			echo "截图 $((i+1)) 完成: $target_ts 秒 -> 文件: $outfile (大小: $file_size , 无压缩: $compress_file_size)"
+			echo "截图 $((i+1)) 完成: $target_ts 秒 -> 文件: $outfile (大小: $file_size)"
 			
         else
             echo "错误: 截图 $((i+1)) 失败！文件不存在/为空: $outfile" >&2
