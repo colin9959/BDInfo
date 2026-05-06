@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# bd - 蓝光/普通视频截图和信息提取工具（无花屏最终版）
+# bd - 蓝光/普通视频截图和信息提取工具（无花屏最终版 - 无压缩+保留截图）
 # 用法: bd <路径> [--count <数量>] [--grid ROWSxCOLS] [--lang LANGUAGE] [--info]
 set +e
 
@@ -107,7 +107,7 @@ install_dependencies() {
         return 0
     fi
     local missing=()
-    for cmd in ffmpeg curl jq pngquant mediainfo montage; do
+    for cmd in ffmpeg curl jq mediainfo montage; do
         if ! command -v $cmd &>/dev/null; then
             missing+=("$cmd")
         fi
@@ -283,29 +283,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# 压缩PNG
-# compress_png() {
-    # local file="$1"
-    # local max_size_bytes=$((10 * 1024 * 1024))
-    # local current_size=$(stat -c%s "$file" 2>/dev/null || echo 0)
-    # if ((current_size <= max_size_bytes)); then
-        # log_debug "【调试】文件无需压缩: $file ($current_size 字节)" 
-        # return 0
-    # fi
-    # if command -v pngquant &>/dev/null; then
-        # local temp_file="${file%.*}_compressed.png"
-        # log_debug "【调试】压缩图片: $file" >&2
-        # pngquant --force --skip-if-larger --output "$temp_file" --quality 60-75 "$file" 2>/dev/null
-        # if [[ -f "$temp_file" && -s "$temp_file" ]]; then
-            # mv "$temp_file" "$file"
-            # log_debug "【调试】压缩完成: $file" >&2
-            # return 0
-        # fi
-    # fi
-    # log_error "警告: 压缩失败，保留原文件" >&2
-    # return 1
-# }
-
 # 上传图床
 upload_to_pixhost() {
     local file="$1"
@@ -313,18 +290,8 @@ upload_to_pixhost() {
     local max_retry=3
     local retry_count=0
     local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
-    if ((size > max_size_mb * 1024 * 1024)); then
-        if ! compress_png "$file"; then
-            echo "压缩失败，跳过上传" >&2
-            return 1
-        fi
-    fi
+
     while ((retry_count < max_retry)); do
-        local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
-        if ((size > max_size_mb * 1024 * 1024)); then
-            echo "文件过大($((size/1024/1024))MB)，跳过上传" >&2
-            return 1
-        fi
         log_debug "【调试】上传图片: $file" >&2
         local response=$(curl -s -F "name=$(basename "$file")" -F "ajax=yes" -F "content_type=0" -F "file=@$file" "https://pixhost.to/new-upload/")
         if [ -z "$response" ]; then
@@ -508,7 +475,7 @@ create_grid_with_ffmpeg() {
                     log_error "montage拼图失败 (退出码: $montage_exit_code)"
                     if [[ -f "$montage_error_file" && -s "$montage_error_file" ]]; then
                         log_error "montage错误输出:"
-                        cat "$montage_error_file" | head -20 >> "$LOG_FILE"
+                        cat "$montage_error_file" | head-20 >> "$LOG_FILE"
                     fi
                     echo "错误: montage拼图也失败" >&2
                     return 1
@@ -638,10 +605,7 @@ process_video_file() {
         if [[ -f "$outfile" && -s "$outfile" ]]; then
             local file_size=$(stat -c "%s" "$outfile" | awk '{print $1/1024 " kb"}')
             screenshot_files+=("$outfile")
-            compress_png "$outfile"
-			local compress_file_size=$(stat -c "%s" "$outfile" | awk '{print $1/1024 " kb"}')
-			echo "截图 $((i+1)) 完成: $target_ts 秒 -> 文件: $outfile (大小: $file_size , 压缩后: $compress_file_size)"
-			
+            echo "截图 $((i+1)) 完成: $target_ts 秒 -> 文件: $outfile (大小: $file_size)"
         else
             echo "错误: 截图 $((i+1)) 失败！文件不存在/为空: $outfile" >&2
             touch "$outfile"
@@ -665,7 +629,6 @@ process_video_file() {
         done
     fi
     log_debug "【调试】生成的截图文件:" >&2
-    # ls -lh "${OUTPUT_DIR}"/*.png 2>/dev/null || echo "  无PNG文件生成" >&2
 }
 
 # 处理BDMV
