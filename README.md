@@ -88,7 +88,7 @@ Linux 系统下，使用 `chmod +x BDExtractor` 为无扩展名的 `BDExtractor`
 - 
 ## 安装方式
 ```shell
-bash <(curl -fsSL https://raw.githubusercontent.com/Kuanghom/BDInfo/main/scripts/installBDTool.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/scripts/installBDTool.sh)
 ```
 
 ## 命令参数
