@@ -289,9 +289,6 @@ upload_to_pixhost() {
     local max_size_mb=10
     local max_retry=3
     local retry_count=0
-    local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
-    if ((size > max_size_mb * 1024 * 1024)); then
-    fi
     while ((retry_count < max_retry)); do
         local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
         if ((size > max_size_mb * 1024 * 1024)); then
