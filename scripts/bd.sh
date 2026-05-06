@@ -7,19 +7,15 @@ set +e
 # ===================== 日志配置（修复date语法） =====================
 LOG_DIR="$HOME/logs"
 mkdir -p "$LOG_DIR"
-# 日志文件名：精确到分钟（无空格，避免语法错误）
 LOG_FILE="$LOG_DIR/bd-$(date +%Y%m%d-%H%M).log"
-> "$LOG_FILE"  # 清空日志文件
-# 核心修复：date格式带空格时必须用引号包裹
+> "$LOG_FILE"
 log_debug() {
     echo "【调试】$(date +"%Y-%m-%d %H:%M:%S") - $1" >> "$LOG_FILE"
 }
-# 错误日志函数（同时写日志+控制台）
 log_error() {
     echo "【错误】$(date +"%Y-%m-%d %H:%M:%S") - $1" >> "$LOG_FILE"
     echo "错误: $1"
 }
-
 
 # 默认配置
 COUNT=3
@@ -29,7 +25,7 @@ GRID_LAYOUT=""
 LANGUAGE="chinese"
 OUTPUT_DIR=""
 SHOW_INFO=false
-MAX_PARALLEL=1  # 同步执行，稳定无错
+MAX_PARALLEL=1
 SKIP_DEP_CHECK=false
 
 # BDInfo 配置
@@ -113,7 +109,6 @@ install_dependencies() {
         fi
     done
 
-    # 检查 ICU 库（区分不同包管理器）
     local icu_missing=false
     if command -v apt &>/dev/null; then
         if ! dpkg -l libicu-dev &>/dev/null; then
@@ -127,7 +122,6 @@ install_dependencies() {
         fi
     fi
 
-    # ImageMagick 包名映射
     local imagemagick_pkg=""
     if command -v apt &>/dev/null; then
         imagemagick_pkg="imagemagick"
@@ -135,11 +129,9 @@ install_dependencies() {
         imagemagick_pkg="ImageMagick"
     fi
 
-    # 检查是否需要安装 ImageMagick
     if ! command -v montage &>/dev/null && [ -n "$imagemagick_pkg" ]; then
         missing+=("$imagemagick_pkg")
     fi
-
 
     if [ ${#missing[@]} -gt 0 ]; then
         echo "正在安装依赖: ${missing[*]}" >&2
@@ -157,10 +149,8 @@ install_dependencies() {
 # 安装BDInfo
 install_bdinfo() {
     if ! command -v BDInfo &>/dev/null; then
-        # 检测系统架构
         local arch=$(uname -m)
         local bdinfo_url=""
-        
         if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
             echo "检测到ARM64架构，正在安装BDInfo..." >&2
             bdinfo_url="$BDINFO_URL_ARM64"
@@ -168,13 +158,10 @@ install_bdinfo() {
             echo "检测到x86_64架构，正在安装BDInfo..." >&2
             bdinfo_url="$BDINFO_URL_X64"
         fi
-        
-        # 定义镜像列表
         local mirrors=(
             "$bdinfo_url"
             "https://ghfast.top/$bdinfo_url"
         )
-        
         for mirror in "${mirrors[@]}"; do
             if wget -q "$mirror" -O "$TEMPDIR/bdinfo.zip"; then
                 unzip -q -o "$TEMPDIR/bdinfo.zip" -d "$TEMPDIR"
@@ -290,7 +277,6 @@ upload_to_pixhost() {
     local max_retry=3
     local retry_count=0
     local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
-
     while ((retry_count < max_retry)); do
         log_debug "【调试】上传图片: $file" >&2
         local response=$(curl -s -F "name=$(basename "$file")" -F "ajax=yes" -F "content_type=0" -F "file=@$file" "https://pixhost.to/new-upload/")
@@ -303,7 +289,7 @@ upload_to_pixhost() {
             else
                 local url=$(echo "$response" | jq -r '.show_url' | sed 's|\\||g;s|pixhost\.to/show|img2.pixhost.to/images|')
                 echo "[img]$url[/img]"
-				echo "$url" >> .image_url.txt
+                echo "$url" >> .image_url.txt
                 log_debug "【调试】上传成功: $url" >&2
                 return 0
             fi
@@ -315,7 +301,7 @@ upload_to_pixhost() {
     return 1
 }
 
-# 获取视频时长（纯数字返回，无污染）
+# 获取视频时长
 get_duration() {
     local input="$1"
     log_debug "【调试】获取时长: $input" >&2
@@ -324,14 +310,11 @@ get_duration() {
     echo "$duration"
 }
 
-# 获取字幕流序号（从0开始计数，仅字幕流）
-# 返回: <字幕序号>,<字幕类型> 或空字符串
-# 字幕类型: text(文本字幕) 或 graphic(图形字幕如PGS/VOBsub)
+# 获取字幕流序号
 get_subtitle_index() {
     local input="$1"
     local language="$2"
     log_debug "【调试】查找字幕流: $language" >&2
-    # 获取字幕流信息：索引、编解码、语言
     local subtitle_info=$(ffprobe -v error -select_streams s -show_entries stream=index,codec_name:stream_tags=language -of csv=p=0 "$input" 2>/dev/null)
     log_debug "【调试】字幕流原始信息: $subtitle_info" >&2
     if [[ -z "$subtitle_info" ]]; then
@@ -339,21 +322,12 @@ get_subtitle_index() {
         echo ""
         return
     fi
-    # 语言映射表（常见语言代码）
     declare -A lang_map=(
-        ["chi"]="chinese"
-        ["zho"]="chinese"
-        ["zh"]="chinese"
-        ["cht"]="chinese"
-        ["chs"]="chinese"
-        ["eng"]="english"
-        ["en"]="english"
-        ["jpn"]="japanese"
-        ["ja"]="japanese"
-        ["kor"]="korean"
-        ["ko"]="korean"
+        ["chi"]="chinese" ["zho"]="chinese" ["zh"]="chinese"
+        ["cht"]="chinese" ["chs"]="chinese" ["eng"]="english"
+        ["en"]="english" ["jpn"]="japanese" ["ja"]="japanese"
+        ["kor"]="korean" ["ko"]="korean"
     )
-    # 文本字幕编解码列表（FFmpeg subtitles滤镜支持的格式）
     local text_codecs="srt ass ssa subrip webvtt mov_text"
     local sub_idx=0
     while IFS= read -r line; do
@@ -361,13 +335,11 @@ get_subtitle_index() {
         local codec=$(echo "$line" | cut -d',' -f2 | tr '[:upper:]' '[:lower:]')
         local lang=$(echo "$line" | cut -d',' -f3 | tr '[:upper:]' '[:lower:]')
         log_debug "【调试】检查字幕流: 流索引=$index, 编解码=$codec, 字幕序号=$sub_idx, 语言代码=$lang" >&2
-        # 判断字幕类型
         local sub_type="graphic"
         if [[ " $text_codecs " == *" $codec "* ]]; then
             sub_type="text"
         fi
         log_debug "【调试】字幕类型: $sub_type (编解码: $codec)" >&2
-        # 转换为标准语言名称
         local normalized_lang="${lang_map[$lang]:-$lang}"
         local normalized_query="${lang_map[${language,,}]:-${language,,}}"
         log_debug "【调试】标准化后: 流语言=$normalized_lang, 查询语言=$normalized_query" >&2
@@ -408,15 +380,10 @@ create_grid_with_ffmpeg() {
     if [[ ${#valid_files[@]} -eq 1 ]]; then
         cp "${valid_files[0]}" "$grid_file"
     else
-        # 使用vstack+hstack组合滤镜拼接（比xstack更兼容）
         local filter_complex=""
-        
-        # 为每个输入添加scale滤镜确保尺寸一致
         for ((i=0; i<${#valid_files[@]}; i++)); do
             filter_complex+="[$i:v]scale=512:288:force_original_aspect_ratio=decrease,pad=512:288:(ow-iw)/2:(oh-ih)/2:white,setsar=1[v$i];"
         done
-        
-        # 构建网格布局：按行分组，然后垂直堆叠
         local row_filters=""
         for ((row=0; row<rows; row++)); do
             local row_inputs=""
@@ -427,12 +394,9 @@ create_grid_with_ffmpeg() {
                 fi
             done
             if [[ -n "$row_inputs" ]]; then
-                # 水平拼接每行
                 filter_complex+="${row_inputs}hstack=inputs=$(echo "$row_inputs" | grep -o '\[' | wc -l)[row$row];"
             fi
         done
-        
-        # 垂直拼接所有行
         local all_rows=""
         for ((row=0; row<rows; row++)); do
             if [[ $((row * cols)) -lt ${#valid_files[@]} ]]; then
@@ -440,23 +404,11 @@ create_grid_with_ffmpeg() {
             fi
         done
         filter_complex+="${all_rows}vstack=inputs=$(echo "$all_rows" | grep -o '\[' | wc -l)[out]"
-        
         local input_args=()
         for file in "${valid_files[@]}"; do input_args+=("-i" "$file"); done
-        
-        # 调试日志：输出完整的ffmpeg命令和参数
-        log_debug "【调试】ffmpeg拼图参数:"
-        log_debug "  - 输入文件数量: ${#valid_files[@]}"
-        log_debug "  - 输入文件列表: ${valid_files[*]}"
-        log_debug "  - 网格布局: ${cols}x${rows}"
-        log_debug "  - filter_complex: $filter_complex"
-        log_debug "  - 输出文件: $grid_file"
-        
-        # 执行ffmpeg并捕获错误输出
         local ffmpeg_error_file="$TEMPDIR/ffmpeg_error_$$.log"
         ffmpeg "${input_args[@]}" -filter_complex "$filter_complex" -map "[out]" -y "$grid_file" 2>"$ffmpeg_error_file"
         local ffmpeg_exit_code=$?
-        
         if [[ $ffmpeg_exit_code -ne 0 ]]; then
             log_error "ffmpeg拼图失败 (退出码: $ffmpeg_exit_code)"
             if [[ -f "$ffmpeg_error_file" && -s "$ffmpeg_error_file" ]]; then
@@ -499,13 +451,11 @@ create_grid_with_ffmpeg() {
     fi
 }
 
-# 核心处理：视频截图（无花屏+无语法错误）
+# 核心处理：视频截图
 process_video_file() {
     local video_file="$1"
     local TIMESTAMP=$(date +%s)
     local screenshot_files=()
-
-    # 获取并校验时长
     local duration=$(get_duration "$video_file")
     if ! [[ "$duration" =~ ^[0-9]+$ ]]; then
         echo "错误: 时长无效 - '$duration'" >&2
@@ -525,8 +475,6 @@ process_video_file() {
         echo "错误: 视频过短或时长无效 (${duration}秒)" >&2
         return 1
     fi
-
-    # 计算截图数量和时间点
     local total_frames=$COUNT
     local rows=2
     local cols=2
@@ -540,7 +488,6 @@ process_video_file() {
     for ((i=0; i<total_frames; i++)); do
         time_points+=($((margin + i * interval)))
     done
-
     echo "↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓ 截图 ↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓"
     local subtitle_display="无"
     local use_subtitle=false
@@ -554,31 +501,24 @@ process_video_file() {
         fi
     fi
     echo "视频时长: $duration 秒, 字幕流: $subtitle_display, 截图数量: $total_frames"
-
-    # ========== 核心无花屏修复：混合Seek截图 ==========
     for ((i=0; i<total_frames; i++)); do
         local target_ts=${time_points[$i]}
-        local seek_quick=$((target_ts - 1))  # 快速Seek到目标前1秒
-        local seek_precise=1                 # 精准Seek1秒到目标位置
+        local seek_quick=$((target_ts - 1))
+        local seek_precise=1
         local outfile="${OUTPUT_DIR}/${TIMESTAMP}_$(printf "%02d" $((i+1))).png"
-
-        # 构建FFmpeg命令：混合Seek（快速+精准）→ 无花屏+速度快
         local ffmpeg_cmd=(
             ffmpeg
-            -ss "$seek_quick"        # 第一步：快速Seek（基于关键帧，无解码，快）
-            -i "$video_file"         # 输入文件
-            -ss "$seek_precise"      # 第二步：精准Seek（仅解码1秒，无花屏）
-            -loglevel error          # 只输错误，减少冗余
-            -an                      # 禁用音频，节省资源
-            -vframes 1               # 仅取1帧
-            -c:v png                 # PNG编码器
-            -compression_level 100   # 最高压缩
-            -y                       # 覆盖输出
+            -ss "$seek_quick"
+            -i "$video_file"
+            -ss "$seek_precise"
+            -loglevel error
+            -an
+            -vframes 1
+            -c:v png
+            -compression_level 100
+            -y
         )
-
-        # 字幕/缩放逻辑
         if [[ "$use_subtitle" == true ]]; then
-            # 转义文件路径中的特殊字符（反斜杠、冒号、单引号）
             local escaped_file="${video_file//\\/\\\\}"
             escaped_file="${escaped_file//:/\\:}"
             escaped_file="${escaped_file//\'/\\\'}"
@@ -593,8 +533,6 @@ process_video_file() {
             fi
         fi
         ffmpeg_cmd+=("$outfile")
-
-        # 执行截图并校验
         log_debug "【调试】执行截图命令: ${ffmpeg_cmd[*]}" >&2
         local ffmpeg_output
         ffmpeg_output=$("${ffmpeg_cmd[@]}" 2>&1)
@@ -611,8 +549,6 @@ process_video_file() {
             touch "$outfile"
         fi
     done
-
-    # 拼图/上传
     if [[ ${#screenshot_files[@]} -eq 0 ]]; then
         echo "错误: 未生成任何有效截图" >&2
         return 1
@@ -653,14 +589,21 @@ process_bdmv() {
     process_video_file "$largest_file"
 }
 
-# 处理ISO
+# 处理ISO（已修复挂载命令）
 process_iso() {
     local iso_file="$1"
     log_debug "【调试】挂载ISO: $iso_file -> $MOUNT_POINT" >&2
-    if ! sudo mount -o loop "$iso_file" "$MOUNT_POINT" 2>/dev/null; then
-        echo "错误: 无法挂载ISO" >&2
-        return 1
+
+    # 修复：加 -t iso9660 -o ro,loop，兼容所有Linux
+    sudo mount -t iso9660 -o ro,loop "$iso_file" "$MOUNT_POINT" 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "错误: 无法挂载ISO（已尝试标准参数）" >&2
+        echo "手动排查命令：" >&2
+        echo "1. sudo modprobe loop" >&2
+        echo "2. sudo mount -t iso9660 -o ro,loop $iso_file $MOUNT_POINT" >&2
+        exit 1
     fi
+
     if [[ -d "$MOUNT_POINT/BDMV" ]]; then
         process_bdmv "$MOUNT_POINT"
     elif [[ -d "$MOUNT_POINT/VIDEO_TS" ]]; then
@@ -725,8 +668,6 @@ main() {
         bdfile) process_video_file "$TARGET_DIR";;
         *) echo "错误: 不支持的类型: $input_type" >&2 && exit 1;;
     esac
-
-    # 最终结果展示
     echo -e "\n↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓ 完成 ↓#↓#↓#↓#↓#↓#↓#↓#↓#↓#↓"
     if [[ -f ".image_url.txt" && -s ".image_url.txt" ]]; then
         echo -e "\n----------------原始地址----------------\n"
