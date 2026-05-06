@@ -387,7 +387,7 @@ create_grid_with_ffmpeg() {
         local row_filters=""
         for ((row=0; row<rows; row++)); do
             local row_inputs=""
-            for ((col=0; col<cols; col++)); do
+            for ((col=0; col<cols; col++)) do
                 local idx=$((row * cols + col))
                 if [[ $idx -lt ${#valid_files[@]} ]]; then
                     row_inputs+="[v$idx]"
@@ -492,7 +492,7 @@ process_video_file() {
     local subtitle_display="无"
     local use_subtitle=false
     if [[ -n "$subtitle_index" ]]; then
-        if [[ "$subtitle_type" == "text" ]]; then
+        if "$subtitle_type" == "text"; then
             subtitle_display="序号$subtitle_index (文本字幕)"
             use_subtitle=true
         else
@@ -589,7 +589,7 @@ process_bdmv() {
     process_video_file "$largest_file"
 }
 
-# 处理ISO（终极修复：强制卸载+兼容特殊字符）
+# 处理ISO（兼容所有Linux系统！无 nounhide 参数）
 process_iso() {
     local iso_file="$1"
     log_debug "【调试】挂载ISO: $iso_file -> $MOUNT_POINT"
@@ -598,11 +598,10 @@ process_iso() {
     sudo umount -f "$MOUNT_POINT" 2>/dev/null || true
     sleep 0.5
 
-    # 兼容所有特殊字符、™、空格、中文
-    sudo mount -t iso9660 -o ro,loop,nounhide "$iso_file" "$MOUNT_POINT"
+    # 最标准、最兼容的 mount 命令
+    sudo mount -t iso9660 -o ro,loop "$iso_file" "$MOUNT_POINT"
     if [ $? -ne 0 ]; then
-        echo "错误: 无法挂载ISO" >&2
-        echo "解决方法：重命名文件，删除特殊符号 ™ 即可" >&2
+        echo "错误: 无法挂载ISO"
         exit 1
     fi
 
@@ -611,7 +610,7 @@ process_iso() {
     elif [[ -d "$MOUNT_POINT/VIDEO_TS" ]]; then
         process_dvd "$MOUNT_POINT"
     else
-        echo "错误: 无法识别ISO格式" >&2
+        echo "错误: 无法识别ISO格式"
         sudo umount -f "$MOUNT_POINT"
         return 1
     fi
