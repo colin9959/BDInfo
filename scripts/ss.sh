@@ -34,7 +34,7 @@ SKIP_DEP_CHECK=false
 
 # BDInfo 配置
 BDINFO_URL_X64="https://github.com/dotnetcorecorner/BDInfo/releases/download/linux-2.0.6/bdinfo_linux_v2.0.6.zip"
-BDINFO_URL_ARM64="https://github.com/Kuanghom/BDInfo/releases/download/arm64-2.0.6/bdinfo_linux_arm64_v2.0.6.zip"
+BDINFO_URL_ARM64="https://github.com/colin9959/BDInfo/releases/download/1.0.0/bdinfo_linux_arm64_v2.0.6.zip"
 INSTALL_DIR="/usr/local/bin"
 TEMPDIR=$(mktemp -d)
 
@@ -284,27 +284,27 @@ cleanup() {
 trap cleanup EXIT
 
 # 压缩PNG
-compress_png() {
-    local file="$1"
-    local max_size_bytes=$((10 * 1024 * 1024))
-    local current_size=$(stat -c%s "$file" 2>/dev/null || echo 0)
-    if ((current_size <= max_size_bytes)); then
-        log_debug "【调试】文件无需压缩: $file ($current_size 字节)" 
-        return 0
-    fi
-    if command -v pngquant &>/dev/null; then
-        local temp_file="${file%.*}_compressed.png"
-        log_debug "【调试】压缩图片: $file" >&2
-        pngquant --force --skip-if-larger --output "$temp_file" --quality 60-75 "$file" 2>/dev/null
-        if [[ -f "$temp_file" && -s "$temp_file" ]]; then
-            mv "$temp_file" "$file"
-            log_debug "【调试】压缩完成: $file" >&2
-            return 0
-        fi
-    fi
-    log_error "警告: 压缩失败，保留原文件" >&2
-    return 1
-}
+# compress_png() {
+    # local file="$1"
+    # local max_size_bytes=$((10 * 1024 * 1024))
+    # local current_size=$(stat -c%s "$file" 2>/dev/null || echo 0)
+    # if ((current_size <= max_size_bytes)); then
+        # log_debug "【调试】文件无需压缩: $file ($current_size 字节)" 
+        # return 0
+    # fi
+    # if command -v pngquant &>/dev/null; then
+        # local temp_file="${file%.*}_compressed.png"
+        # log_debug "【调试】压缩图片: $file" >&2
+        # pngquant --force --skip-if-larger --output "$temp_file" --quality 60-75 "$file" 2>/dev/null
+        # if [[ -f "$temp_file" && -s "$temp_file" ]]; then
+            # mv "$temp_file" "$file"
+            # log_debug "【调试】压缩完成: $file" >&2
+            # return 0
+        # fi
+    # fi
+    # log_error "警告: 压缩失败，保留原文件" >&2
+    # return 1
+# }
 
 # 上传图床
 upload_to_pixhost() {
@@ -605,7 +605,7 @@ process_video_file() {
             -an                      # 禁用音频，节省资源
             -vframes 1               # 仅取1帧
             -c:v png                 # PNG编码器
-            -compression_level 3     # 速度优先的压缩
+            -compression_level 100   # 最高压缩
             -y                       # 覆盖输出
         )
 
