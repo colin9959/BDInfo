@@ -582,7 +582,8 @@ process_video_file() {
             -an                      # 禁用音频，节省资源
             -vframes 1               # 仅取1帧
             -c:v png                 # PNG编码器
-            -compression_level 3     # 速度优先的压缩
+            -compression_level 100   # 最大压缩
+			-pred best               # 自动选最优滤镜
             -y                       # 覆盖输出
         )
 
