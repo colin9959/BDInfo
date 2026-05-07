@@ -28,6 +28,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 | `--grid ROWSxCOLS` | 拼图布局（如 2x2、3x3），启用后将截图拼成一张图 |    | |
 | `--lang <语言>` | 字幕语言（如 chinese、english） |    | chinese |
 | `--info` | 显示详细信息（蓝光显示 BDInfo，普通视频显示 MediaInfo） |    | False |
+| `-noz` | 不执行压缩图片 |    | False |
 
 ## 依赖工具
 
