@@ -24,7 +24,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 | 参数 | 说明 | 必填 | 默认值 |
 | --- | --- |----| --- |
 | `<路径>` | ISO 文件、蓝光文件夹或视频文件路径 | ✅  | |
-| `--count <数量>` | 截图数量 |    | 6 |
+| `--count <数量>` | 截图数量 |    | 4 |
 | `--grid ROWSxCOLS` | 拼图布局（如 2x2、3x3），启用后将截图拼成一张图 |    | |
 | `--lang <语言>` | 字幕语言（如 chinese、english） |    | chinese |
 | `--info` | 显示详细信息（蓝光显示 BDInfo，普通视频显示 MediaInfo） |    | False |
@@ -48,7 +48,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 
 ### 基础截图(已创建bd快捷指令)
 ```bash
-# 对普通视频截取6张截图
+# 对普通视频截取4张截图
 bd /path/to/video.mkv
 
 
