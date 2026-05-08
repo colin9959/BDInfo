@@ -42,7 +42,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 - BDInfo（根据系统架构自动选择 x64 或 arm64 版本）
 
 ## 使用方法
-<img src="/.images/bd-01.png" width="750"> <!-- 高度自动按比例缩放 -->
+<img src="/.images/bd-02.png" width="750"> <!-- 高度自动按比例缩放 -->
 
 
 
