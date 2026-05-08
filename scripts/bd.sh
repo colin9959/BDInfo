@@ -22,7 +22,7 @@ log_error() {
 
 
 # 默认配置
-COUNT=6
+COUNT=4
 TARGET_DIR=""
 MOUNT_POINT="/tmp/bd_mount"
 GRID_LAYOUT=""
