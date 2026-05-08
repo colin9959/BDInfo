@@ -2,7 +2,7 @@
 
 # bd.sh 脚本
 
-蓝光/普通视频截图和信息提取工具，支持自动截图、字幕渲染、拼图、图床上传等功能（本脚本移除了有损压缩，若4k视频截图超出10兆，请从/root/screenshot中导出至本地处理之后再手动上传图床））。
+蓝光/普通视频截图和信息提取工具，支持自动截图、字幕渲染、拼图、图床上传等功能（本脚本默认会对视频截图进行压缩，若需要未压缩截图，请增加--noz参数截图，请从/root/screenshot中导出截图至本地处理之后再手动上传图床））。
 
 
 ## 功能特性
@@ -28,7 +28,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 | `--grid ROWSxCOLS` | 拼图布局（如 2x2、3x3），启用后将截图拼成一张图 |    | |
 | `--lang <语言>` | 字幕语言（如 chinese、english） |    | chinese |
 | `--info` | 显示详细信息（蓝光显示 BDInfo，普通视频显示 MediaInfo） |    | False |
-| `-noz` | 不执行压缩图片 |    | False |
+| `--noz` | 不执行压缩图片 |    | False |
 
 ## 依赖工具
 
@@ -36,6 +36,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 - ffmpeg
 - curl
 - jq
+- pngquant
 - mediainfo
 - libicu-dev / libicu
 - BDInfo（根据系统架构自动选择 x64 或 arm64 版本）
@@ -45,52 +46,55 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 
 
 
-### 基础截图
+### 基础截图(已创建bd快捷指令)
 ```bash
-# 对普通视频截取3张截图
-./bd.sh /path/to/video.mkv
+# 对普通视频截取6张截图
+bd /path/to/video.mkv
+
+# 对普通视频截取6张截图未压缩版
+bd --noz /path/to/video.mkv
 
 # 对蓝光文件夹截图
-./bd.sh /path/to/BDMV_FOLDER
+bd.sh /path/to/BDMV_FOLDER
 
 # 对 ISO 镜像截图
-./bd.sh /path/to/movie.iso
+bd /path/to/movie.iso
 ```
 
 ### 指定截图数量
 ```bash
 # 截取5张截图
-./bd.sh /path/to/video.mp4 --count 5
+bd /path/to/video.mp4 --count 5
 ```
 
 ### 拼图模式
 ```bash
 # 6张截图拼成2x3布局
-./bd.sh /path/to/video.mkv --grid 2x3
+bd /path/to/video.mkv --grid 2x3
 
 # 9张截图拼成3x3布局
-./bd.sh /path/to/bd_folder --count 9 --grid 3x3
+bd /path/to/bd_folder --count 9 --grid 3x3
 ```
 
 ### 显示详细信息
 ```bash
 # 提取蓝光 BDInfo 信息并截图
-./bd.sh /path/to/BDMV_FOLDER --info
+bd /path/to/BDMV_FOLDER --info
 
 # 提取视频 MediaInfo 信息并截图
-./bd.sh /path/to/video.mp4 --info
+bd /path/to/video.mp4 --info
 ```
 
 ### 指定字幕语言
 ```bash
 # 渲染英文字幕截图
-./bd.sh /path/to/video.mkv --lang english
+bd /path/to/video.mkv --lang english
 ```
 
 ### 综合示例
 ```bash
 # 提取蓝光信息、渲染中文字幕、6张截图拼成2x3
-./bd.sh /path/to/movie.iso --info --lang chinese --count 6 --grid 2x3
+bd /path/to/movie.iso --info --lang chinese --count 6 --grid 2x3
 ```
 
 ## 输出说明
