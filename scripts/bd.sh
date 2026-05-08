@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # bd - 蓝光/普通视频截图和信息提取工具（无花屏最终版）
-# 用法: bd [-noz] <路径> [--count <数量>] [--grid ROWSxCOLS] [--lang LANGUAGE] [--info]
+# 用法: bd [--noz] <路径> [--count <数量>] [--grid ROWSxCOLS] [--lang LANGUAGE] [--info]
 set +e
 
 # ===================== 日志配置（修复date语法） =====================
@@ -63,7 +63,7 @@ while [[ $# -gt 0 ]]; do
             SHOW_INFO=true
             shift
             ;;
-        -noz)
+        --noz)
             NO_COMPRESS=true
             shift
             ;;
@@ -292,7 +292,7 @@ trap cleanup EXIT
 compress_png() {
     # 如果开启不压缩，直接返回
     if [[ "$NO_COMPRESS" == true ]]; then
-        log_debug "【调试】已启用-noz，跳过图片压缩"
+        log_debug "【调试】已启用--noz，跳过图片压缩"
         return 0
     fi
 
@@ -752,7 +752,7 @@ process_regular_video() {
 main() {
     install_dependencies
     if [[ -z "$TARGET_DIR" ]]; then
-        echo "用法: $0 [-noz] <路径> [--count <数量>] [--grid ROWSxCOLS] [--lang LANGUAGE] [--info]" >&2
+        echo "用法: $0 [--noz] <路径> [--count <数量>] [--grid ROWSxCOLS] [--lang LANGUAGE] [--info]" >&2
         exit 1
     fi
     log_debug "【调试】处理路径: $TARGET_DIR" >&2
