@@ -70,7 +70,7 @@ while [[ $# -gt 0 ]]; do
         *)
             if [[ -z "$TARGET_DIR" ]]; then
                 TARGET_DIR="${1//\'/}"
-                USER_SCREENSHOT_DIR="$HOME/screenshot"
+                USER_SCREENSHOT_DIR="/home/screenshot"
                 mkdir -p "$USER_SCREENSHOT_DIR"
                 chmod 777 "$USER_SCREENSHOT_DIR"
                 if [[ -f "$TARGET_DIR" ]]; then
