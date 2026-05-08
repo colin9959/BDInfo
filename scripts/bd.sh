@@ -367,21 +367,20 @@ get_duration() {
 }
 
 # 获取字幕流序号（从0开始计数，仅字幕流）
-# 返回: <字幕序号>,<字幕类型> 或空字符串
-# 字幕类型: text(文本字幕) 或 graphic(图形字幕如PGS/VOBsub)
 get_subtitle_index() {
     local input="$1"
     local language="$2"
     log_debug "【调试】查找字幕流: $language" >&2
-    # 获取字幕流信息：索引、编解码、语言
+    
     local subtitle_info=$(ffprobe -v error -select_streams s -show_entries stream=index,codec_name:stream_tags=language -of csv=p=0 "$input" 2>/dev/null)
     log_debug "【调试】字幕流原始信息: $subtitle_info" >&2
+    
     if [[ -z "$subtitle_info" ]]; then
         log_debug "【调试】未找到字幕流" >&2
         echo ""
         return
     fi
-    # 语言映射表（常见语言代码）
+
     declare -A lang_map=(
         ["chi"]="chinese"
         ["zho"]="chinese"
@@ -395,32 +394,43 @@ get_subtitle_index() {
         ["kor"]="korean"
         ["ko"]="korean"
     )
-    # 文本字幕编解码列表（FFmpeg subtitles滤镜支持的格式）
+
     local text_codecs="srt ass ssa subrip webvtt mov_text"
     local sub_idx=0
+
     while IFS= read -r line; do
         local index=$(echo "$line" | cut -d',' -f1)
         local codec=$(echo "$line" | cut -d',' -f2 | tr '[:upper:]' '[:lower:]')
         local lang=$(echo "$line" | cut -d',' -f3 | tr '[:upper:]' '[:lower:]')
-        log_debug "【调试】检查字幕流: 流索引=$index, 编解码=$codec, 字幕序号=$sub_idx, 语言代码=$lang" >&2
-        # 判断字幕类型
+
+        if [[ -z "$lang" ]]; then
+            lang=""
+        fi
+
         local sub_type="graphic"
         if [[ " $text_codecs " == *" $codec "* ]]; then
             sub_type="text"
         fi
-        log_debug "【调试】字幕类型: $sub_type (编解码: $codec)" >&2
-        # 转换为标准语言名称
-        local normalized_lang="${lang_map[$lang]:-$lang}"
+
+        local normalized_lang=""
+        if [[ -n "$lang" && -v lang_map["$lang"] ]]; then
+            normalized_lang="${lang_map[$lang]}"
+        else
+            normalized_lang="$lang"
+        fi
+
         local normalized_query="${lang_map[${language,,}]:-${language,,}}"
-        log_debug "【调试】标准化后: 流语言=$normalized_lang, 查询语言=$normalized_query" >&2
+
         if [[ "$normalized_lang" == *"$normalized_query"* ]] || [[ "$lang" == *"${language,,}"* ]]; then
-            log_debug "【调试】找到匹配字幕流: 流索引=$index, 字幕序号=$sub_idx, 类型=$sub_type (语言: $lang -> $normalized_lang)" >&2
+            log_debug "【调试】找到匹配字幕流: 序号=$sub_idx, 类型=$sub_type"
             echo "$sub_idx,$sub_type"
             return
         fi
+
         ((sub_idx++))
     done <<< "$subtitle_info"
-    log_error "【调试】未找到指定语言字幕流 (查找: $language)" >&2
+
+    log_debug "【调试】未找到指定语言字幕流"
     echo ""
 }
 
@@ -516,8 +526,7 @@ create_grid_with_ffmpeg() {
                 if [[ $montage_exit_code -ne 0 ]]; then
                     log_error "montage拼图失败 (退出码: $montage_exit_code)"
                     if [[ -f "$montage_error_file" && -s "$montage_error_file" ]]; then
-                        log_error "montage错误输出:"
-                        cat "$montage_error_file" | head-20 >> "$LOG_FILE"
+                        cat "$montage_error_file" | head -20 >> "$LOG_FILE"
                     fi
                     echo "错误: montage拼图也失败" >&2
                     return 1
@@ -677,7 +686,6 @@ process_video_file() {
         done
     fi
     log_debug "【调试】生成的截图文件:" >&2
-    # ls -lh "${OUTPUT_DIR}"/*.png 2>/dev/null || echo "  无PNG文件生成" >&2
 }
 
 # 处理BDMV
