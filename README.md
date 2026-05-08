@@ -2,7 +2,7 @@
 
 # bd.sh 脚本
 
-蓝光/普通视频截图和信息提取工具，支持自动截图、字幕渲染、拼图、图床上传等功能（本脚本默认会对视频截图进行压缩，若需要未压缩截图，请增加--noz参数截图，请从/home/screenshot中导出截图至本地处理之后再手动上传图床））。
+蓝光/普通视频截图和信息提取工具，支持自动截图、字幕渲染、拼图、图床上传等功能。
 
 
 ## 功能特性
@@ -28,7 +28,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 | `--grid ROWSxCOLS` | 拼图布局（如 2x2、3x3），启用后将截图拼成一张图 |    | |
 | `--lang <语言>` | 字幕语言（如 chinese、english） |    | chinese |
 | `--info` | 显示详细信息（蓝光显示 BDInfo，普通视频显示 MediaInfo） |    | False |
-| `--noz` | 不执行压缩图片 |    | False |
+
 
 ## 依赖工具
 
@@ -51,8 +51,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/colin9959/BDInfo/main/script
 # 对普通视频截取6张截图
 bd /path/to/video.mkv
 
-# 对普通视频截取6张截图未压缩版
-bd --noz /path/to/video.mkv
 
 # 对蓝光文件夹截图
 bd.sh /path/to/BDMV_FOLDER
